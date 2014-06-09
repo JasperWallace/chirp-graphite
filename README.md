@@ -10,3 +10,9 @@ having to run it as root:
 
 # usermod -a -G i2c <user>
 
+== notes ==
+
+The sensor source code is here:
+
+https://github.com/Miceuz/PlantWateringAlarm/blob/release/sensor/src/main.c
+
