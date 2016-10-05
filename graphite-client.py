@@ -42,4 +42,5 @@ while True:
   except:
     e = sys.exc_info()[0]
     print e
+  sys.stdout.flush()
   time.sleep(delay)
