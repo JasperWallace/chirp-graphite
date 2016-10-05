@@ -7,6 +7,17 @@ class Chirp:
     self.bus_num = bus
     self.bus = smbus.SMBus(bus)
     self.address = address
+    self.reset()
+    self.version()
+
+  def reset(self):
+    self.write(0x06)
+    time.sleep(1)
+
+  def version(self):
+    self.write(0x07)
+    ver = self.read()
+    print "version", hex(ver)
 
   def read(self):
     ok = False
@@ -37,8 +48,11 @@ class Chirp:
         time.sleep(0.1)
         count = count + 1
         if count > 5:
-          raise
-    
+          e = sys.exc_info()[0]
+          print str(e)
+          # will this just break everything?
+          time.sleep(10)
+
   def get_reg(self, reg):
     self.write(reg)
     time.sleep(0.1)
@@ -68,7 +82,7 @@ class Chirp:
     return "<Chirp sensor on bus %d, addr %d>" % (self.bus_num, self.address)
 
 if __name__ == "__main__":
-  addr = 0x20
+  addr = 0x50
   if len(sys.argv) == 2:
     if sys.argv[1].startswith("0x"):
       addr = int(sys.argv[1], 16)
@@ -77,8 +91,11 @@ if __name__ == "__main__":
   chirp = Chirp(1, addr)
 
   while True:
+    chirp.reset()
     print "cap", chirp.cap_sense()
-    print "temp", chirp.temp()
+    chirp.reset()
+    print "temp", chirp.temp() / 10.0
+    chirp.reset()
     print "light", chirp.light()
     time.sleep(1)
     print

@@ -37,5 +37,9 @@ while True:
   print '-' * 80
   print message
   print
-  sock.sendall(message)
+  try:
+    sock.sendall(message)
+  except:
+    e = sys.exc_info()[0]
+    print e
   time.sleep(delay)
