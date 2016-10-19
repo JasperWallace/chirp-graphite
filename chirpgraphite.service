@@ -1,0 +1,17 @@
+[Unit]
+Description=Graphite the chirp sensor
+Requires=network-online.target
+After=dhcpcd.service
+
+[Service]
+Type=simple
+WorkingDirectory=/home/jasper/chirp-graphite
+ExecStart=/home/jasper/chirp-graphite/graphite-client.py
+User=jasper
+Group=i2c
+Restart=always
+RestartSec=1min
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

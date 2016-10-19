@@ -34,9 +34,7 @@ while True:
   lines.append("chirp.%s.%x.light %s %d" %     (hostname, addr, chirp.light(),     int(time.time()) ))
   message = '\n'.join(lines) + '\n' #all lines must end in a newline
   print "sending message\n"
-  print '-' * 80
   print message
-  print
   try:
     sock.sendall(message)
   except:
