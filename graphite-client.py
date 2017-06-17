@@ -3,50 +3,72 @@
 #
 #
 
-import sys, time
-from socket import socket, gethostname
+import sys, time, argparse, graphiteclient
 from chirp import Chirp
-
 
 server = "bogwoppit.lan.pointless.net"
 port = 2003
 
+parser = argparse.ArgumentParser(description='send chirp stats to graphite.')
 
-sock = socket()
-try:
-  sock.connect( (server, port) )
-except:
-  print "Couldn't connect to %(server)s on port %(port)d, is carbon-agent.py running?" % { 'server':server, 'port':port }
-  sys.exit(1)
+parser.add_argument('--server', type=str,
+  help='The graphite server hostname')
 
-addr = 0x51
-hostname = gethostname()
+parser.add_argument('--port',
+  type=int,
+  help='The graphite server port (defaults to 2003)')
 
-chirp = Chirp(1, addr)
+bus = 0
+parser.add_argument('--bus',
+  type=int,
+  help='The i2c bus to use')
+
+addr = 0x52
+parser.add_argument('--address',
+  type=str,
+  help='The device address on the i2c bus')
+#
+parser.add_argument('--overrideaddress',
+  type=str,
+  help='Override the address used in the graphite metric')
+
+args = parser.parse_args()
+
+if args.server:
+  server = args.server
+
+if args.port:
+  port = args.port
+
+if args.bus:
+  bus = args.bus
+
+if args.address:
+  if args.address.startswith("0x"):
+    addr = int(args.address, 16)
+  else:
+    addr = int(args.address)
+
+override = addr
+
+if args.overrideaddress:
+  if args.overrideaddress.startswith("0x"):
+    override = int(args.overrideaddress, 16)
+  else:
+    override = int(args.overrideaddress)
+
+print server, port, bus, "0x%02x" % (addr),  "0x%02x" % (override)
 
 delay = 30
 
+chirp = Chirp(bus, addr)
+client = graphiteclient.GraphiteClient(server, port, delay)
+client.verbose = True
+
 while True:
-  lines = []
-  #We're gonna report all three loadavg values
-  lines.append("chirp.%s.%x.cap_sense %s %d" % (hostname, addr, chirp.cap_sense(), int(time.time()) ))
-  lines.append("chirp.%s.%x.temp %s %d" %      (hostname, addr, chirp.temp(),      int(time.time()) ))
-  lines.append("chirp.%s.%x.light %s %d" %     (hostname, addr, chirp.light(),     int(time.time()) ))
-  message = '\n'.join(lines) + '\n' #all lines must end in a newline
-  print "sending message\n"
-  print message
-  try:
-    sock.sendall(message)
-  except Exception, e:
-    print e
-    sock.close()
-    sock = socket()
-    try:
-      sock.connect( (server, port) )
-    except Exception, e:
-      print "Couldn't connect to %(server)s on port %(port)d, is carbon-agent.py running?" % { 'server':server, 'port':port }
-    else:
-      sock.sendall(message)
+  client.poke("chirp.%s" + ".%x.cap_sense" % (override), chirp.cap_sense())
+  client.poke("chirp.%s" + ".%x.temp"      % (override), chirp.temp())
+  client.poke("chirp.%s" + ".%x.light"     % (override), chirp.light())
 
   sys.stdout.flush()
   time.sleep(delay)

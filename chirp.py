@@ -44,12 +44,11 @@ class Chirp:
         # sometime writing raises an IOError, i don't know why.
         self.bus.write_byte(self.address, reg)
         ok = True
-      except IOError:
+      except IOError, e:
         time.sleep(0.1)
         count = count + 1
         if count > 5:
-          e = sys.exc_info()[0]
-          print str(e)
+          print e
           # will this just break everything?
           time.sleep(10)
 
@@ -83,12 +82,18 @@ class Chirp:
 
 if __name__ == "__main__":
   addr = 0x50
-  if len(sys.argv) == 2:
+  bus = 0
+
+  if len(sys.argv) > 1:
     if sys.argv[1].startswith("0x"):
       addr = int(sys.argv[1], 16)
     else:
       addr = int(sys.argv[1])
-  chirp = Chirp(1, addr)
+
+  if len(sys.argv) > 2:
+      bus = int(sys.argv[2])
+
+  chirp = Chirp(bus, addr)
 
   while True:
     chirp.reset()
