@@ -16,10 +16,10 @@ sock = socket()
 try:
   sock.connect( (server, port) )
 except:
-  print "Couldn't connect to %(server)s on port %(port)d, is carbon-agent.py running?" % { 'server':CARBON_SERVER, 'port':CARBON_PORT }
+  print "Couldn't connect to %(server)s on port %(port)d, is carbon-agent.py running?" % { 'server':server, 'port':port }
   sys.exit(1)
 
-addr = 0x50
+addr = 0x51
 hostname = gethostname()
 
 chirp = Chirp(1, addr)
@@ -37,8 +37,16 @@ while True:
   print message
   try:
     sock.sendall(message)
-  except:
-    e = sys.exc_info()[0]
+  except Exception, e:
     print e
+    sock.close()
+    sock = socket()
+    try:
+      sock.connect( (server, port) )
+    except Exception, e:
+      print "Couldn't connect to %(server)s on port %(port)d, is carbon-agent.py running?" % { 'server':server, 'port':port }
+    else:
+      sock.sendall(message)
+
   sys.stdout.flush()
   time.sleep(delay)
