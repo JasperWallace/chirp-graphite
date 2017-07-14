@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 
 import smbus, time, sys
 
@@ -17,7 +18,7 @@ class Chirp:
   def version(self):
     self.write(0x07)
     ver = self.read()
-    print "version", hex(ver)
+    print("version", hex(ver))
 
   def read(self):
     ok = False
@@ -48,7 +49,7 @@ class Chirp:
         time.sleep(0.1)
         count = count + 1
         if count > 5:
-          print e
+          print(e)
           # will this just break everything?
           time.sleep(10)
 
@@ -65,7 +66,7 @@ class Chirp:
     while t != 0xff:
       t = self.read()
     return (b1 << 8) + b2
-    
+
   def cap_sense(self):
     return self.get_reg(0)
 
@@ -97,10 +98,10 @@ if __name__ == "__main__":
 
   while True:
     chirp.reset()
-    print "cap", chirp.cap_sense()
+    print("cap", chirp.cap_sense())
     chirp.reset()
-    print "temp", chirp.temp() / 10.0
+    print("temp", chirp.temp() / 10.0)
     chirp.reset()
-    print "light", chirp.light()
+    print("light", chirp.light())
     time.sleep(1)
-    print
+    print()
