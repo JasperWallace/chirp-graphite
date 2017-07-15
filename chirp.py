@@ -79,7 +79,7 @@ class Chirp:
     return self.get_reg(4)
 
   def __repr__(self):
-    return "<Chirp sensor on bus %d, addr %d>" % (self.bus_num, self.address)
+    return "<Chirp sensor on bus %d, addr 0x%02x>" % (self.bus_num, self.address)
 
 if __name__ == "__main__":
   addr = 0x50

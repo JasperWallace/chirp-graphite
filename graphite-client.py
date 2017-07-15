@@ -2,6 +2,7 @@
 #
 #
 #
+from __future__ import print_function
 
 import sys, time, argparse, graphiteclient
 from chirp import Chirp
@@ -18,19 +19,31 @@ parser.add_argument('--port',
   type=int,
   help='The graphite server port (defaults to 2003)')
 
-bus = 0
-parser.add_argument('--bus',
-  type=int,
-  help='The i2c bus to use')
+def check_chirp(arg):
+    arg = arg.split(':')
+    if len(arg) != 3:
+        msg = "%s wrong format" % arg
+        raise argparse.ArgumentTypeError(msg)
+    bus, addr, name = arg
+    out = {}
+    try:
+        out['bus'] = int(bus)
+    except Exception, e:
+        raise argparse.ArgumentTypeError("bus should be an int, not %s : %s" % (bus, e))
+    try:
+        if addr.startswith("0x"):
+            addr = int(addr, 16)
+        else:
+            addr = int(addr)
+        out['addr'] = addr
+    except:
+        raise argparse.ArgumentTypeError("addr should be an int, not %s" % (addr))
+    out['name'] = name
+    return out
 
-addr = 0x52
-parser.add_argument('--address',
-  type=str,
-  help='The device address on the i2c bus')
-#
-parser.add_argument('--overrideaddress',
-  type=str,
-  help='Override the address used in the graphite metric')
+parser.add_argument('chirps', metavar='C', type=check_chirp, nargs='+',
+    action='append',
+    help='a list of chirps to talk to in the form bus:addr:name, e.g. 1:0x49:tomatoes')
 
 args = parser.parse_args()
 
@@ -40,35 +53,27 @@ if args.server:
 if args.port:
   port = args.port
 
-if args.bus:
-  bus = args.bus
+cargs = args.chirps[0]
 
-if args.address:
-  if args.address.startswith("0x"):
-    addr = int(args.address, 16)
-  else:
-    addr = int(args.address)
-
-override = addr
-
-if args.overrideaddress:
-  if args.overrideaddress.startswith("0x"):
-    override = int(args.overrideaddress, 16)
-  else:
-    override = int(args.overrideaddress)
-
-print server, port, bus, "0x%02x" % (addr),  "0x%02x" % (override)
+print(server, port)
 
 delay = 30
 
-chirp = Chirp(bus, addr)
 client = graphiteclient.GraphiteClient(server, port, delay)
 client.verbose = True
 
-while True:
-  client.poke("chirp.%s" + ".%x.cap_sense" % (override), chirp.cap_sense())
-  client.poke("chirp.%s" + ".%x.temp"      % (override), chirp.temp())
-  client.poke("chirp.%s" + ".%x.light"     % (override), chirp.light())
+chirps = []
+for c in cargs:
+    print(c)
+    chirp.append({'chirp': Chirp(c['bus'], c['addr']), 'name': c['name']})
 
-  sys.stdout.flush()
-  time.sleep(delay)
+os.exit(0)
+
+while True:
+    for c in chirps:
+        client.poke("chirp.%s" + ".%x.cap_sense" % (c['name']), c['chirp'].cap_sense())
+        client.poke("chirp.%s" + ".%x.temp"      % (c['name']), c['chirp'].temp())
+        client.poke("chirp.%s" + ".%x.light"     % (c['name']), c['chirp'].light())
+
+    sys.stdout.flush()
+    time.sleep(delay)
