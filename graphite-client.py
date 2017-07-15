@@ -65,15 +65,13 @@ client.verbose = True
 chirps = []
 for c in cargs:
     print(c)
-    chirp.append({'chirp': Chirp(c['bus'], c['addr']), 'name': c['name']})
-
-os.exit(0)
+    chirps.append({'chirp': Chirp(c['bus'], c['addr']), 'name': c['name']})
 
 while True:
     for c in chirps:
-        client.poke("chirp.%s" + ".%x.cap_sense" % (c['name']), c['chirp'].cap_sense())
-        client.poke("chirp.%s" + ".%x.temp"      % (c['name']), c['chirp'].temp())
-        client.poke("chirp.%s" + ".%x.light"     % (c['name']), c['chirp'].light())
+        client.poke("chirp.%s.cap_sense" % (c['name']), c['chirp'].cap_sense())
+        client.poke("chirp.%s.temp"      % (c['name']), c['chirp'].temp())
+        client.poke("chirp.%s.light"     % (c['name']), c['chirp'].light())
 
     sys.stdout.flush()
     time.sleep(delay)
