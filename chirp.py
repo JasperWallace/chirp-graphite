@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from __future__ import print_function
 
-import smbus, time, sys
+import smbus, time, sys, argparse
 
 class Chirp:
   def __init__(self, bus=1, address=0x20):
@@ -78,6 +78,11 @@ class Chirp:
     time.sleep(1.5)
     return self.get_reg(4)
 
+  def set_address(self, sa):
+    self.write(0x1)
+    self.write(sa)
+    self.reset()
+
   def __repr__(self):
     return "<Chirp sensor on bus %d, addr 0x%02x>" % (self.bus_num, self.address)
 
@@ -85,16 +90,49 @@ if __name__ == "__main__":
   addr = 0x50
   bus = 0
 
-  if len(sys.argv) > 1:
-    if sys.argv[1].startswith("0x"):
-      addr = int(sys.argv[1], 16)
-    else:
-      addr = int(sys.argv[1])
+  parser = argparse.ArgumentParser(description='Work with Chirp\'s')
 
-  if len(sys.argv) > 2:
-      bus = int(sys.argv[2])
+  parser.add_argument('--set-address', type=str,
+      help='set the chirps i2c address to this address')
+
+  parser.add_argument('address',
+      type=str,default="0x20",
+      help='the chirp\'s i2c address')
+
+  parser.add_argument('bus',
+      type=int, default=1, nargs='?',
+      help='the i2c bus to look at')
+
+  args = parser.parse_args()
+
+  bus = args.bus
+  addr = args.address
+  try:
+    if addr.startswith("0x"):
+      addr = int(addr, 16)
+    else:
+      addr = int(addr)
+  except ValueError:
+    parser.error("can't parse %s as an i2c address" % (args.address))
+    raise SystemExit
 
   chirp = Chirp(bus, addr)
+
+  if args.set_address:
+    sa = args.set_address
+    try:
+      if sa.startswith("0x"):
+        sa = int(sa, 16)
+      else:
+        sa = int(sa)
+    except ValueError:
+      parser.error("can't parse %s as an i2c address" % (args.set_address))
+      raise SystemExit
+
+    print("Setting the chirp's i2c address to 0x%x" % (sa))
+    chirp.set_address(sa)
+    print("done")
+    raise SystemExit
 
   while True:
     chirp.reset()
